@@ -9,7 +9,7 @@ FILE_NAME = "events.csv"
 # GMAIL SETTINGS
 
 
-SENDER_EMAIL = "{Your Full Email}" # 
+SENDER_EMAIL = "{Your Full Email}" 
 APP_PASSWORD = "{APP password}"
 
 
