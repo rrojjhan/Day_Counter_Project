@@ -18,8 +18,8 @@ FILE_NAME = "events.csv"
 # GMAIL SETTINGS
 
 
-SENDER_EMAIL = "satoru2334gojo@gmail.com" # May be change it to an email
-APP_PASSWORD = "knkh pnkt kgni awom"
+SENDER_EMAIL = "{Your Full Email}" 
+APP_PASSWORD = "{APP password}"
 
 
 # LOAD EVENTS
