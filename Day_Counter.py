@@ -1,1 +1,327 @@
+import csv
+import smtplib
+from email.message import EmailMessage
+from datetime import datetime
 
+FILE_NAME = "events.csv"
+
+
+# GMAIL SETTINGS
+
+
+SENDER_EMAIL = "{Your Full Email}" # 
+APP_PASSWORD = "{APP password}"
+
+
+# LOAD EVENTS
+
+
+def load_events():
+    events = []
+
+    try:
+        with open(FILE_NAME, newline="") as file:
+            reader = csv.reader(file)
+
+            for row in reader:
+                if row:
+                    events.append({
+                        "name": row[0],
+                        "date": row[1],
+                        "email": row[2]
+                    })
+
+    except FileNotFoundError:
+        pass
+
+    return events
+
+
+# SAVE EVENTS
+
+
+def save_events(events):
+    with open(FILE_NAME, "w", newline="") as file:
+        writer = csv.writer(file)
+
+        for e in events:
+            writer.writerow([e["name"], e["date"], e["email"]])
+
+
+# VALIDATE DATE
+
+
+def is_valid_date(date):
+    try:
+        datetime.strptime(date, "%Y-%m-%d")
+        return True
+
+    except ValueError:
+        return False
+
+
+# CALCULATE DAYS LEFT
+
+
+def days_left(date):
+
+    today = datetime.today().date()
+
+    event_date = datetime.strptime(
+        date,
+        "%Y-%m-%d"
+    ).date()
+
+    return (event_date - today).days
+
+
+# ADD EVENT
+
+
+def add_event(events):
+
+    name = input("Enter event name: ")
+
+    while True:
+
+        date = input("Enter date (YYYY-MM-DD): ")
+
+        if is_valid_date(date):
+            break
+
+        else:
+            print("Invalid date format. Try again.")
+
+    email = input("Enter reminder email: ")
+
+    events.append({
+        "name": name,
+        "date": date,
+        "email": email
+    })
+
+    print("Event added successfully!")
+
+
+# VIEW EVENTS
+
+
+def view_events(events):
+
+    if not events:
+        print("No events found.")
+        return
+
+    events.sort(key=lambda x: x["date"])
+
+    print("\n===== YOUR EVENTS =====")
+
+    for i, e in enumerate(events, start=1):
+
+        remaining = days_left(e["date"])
+
+        if remaining > 0:
+            status = f"{remaining} days left"
+
+        elif remaining == 0:
+            status = "TODAY!"
+
+        else:
+            status = "Passed"
+
+        print(
+            f"{i}. "
+            f"{e['name']} - "
+            f"{e['date']} - "
+            f"{e['email']} "
+            f"({status})"
+        )
+
+
+# SEARCH EVENTS
+
+
+def search_events(events):
+
+    keyword = input(
+        "Enter keyword to search: "
+    ).lower()
+
+    found = False
+
+    for e in events:
+
+        if keyword in e["name"].lower():
+
+            remaining = days_left(e["date"])
+
+            if remaining > 0:
+                status = f"{remaining} days left"
+
+            elif remaining == 0:
+                status = "TODAY!"
+
+            else:
+                status = "Passed"
+
+            print(
+                f"{e['name']} - "
+                f"{e['date']} "
+                f"({status})"
+            )
+
+            found = True
+
+    if not found:
+        print("No matching events found.")
+
+
+# SEND EMAIL
+
+
+def send_email(receiver_email, subject, body):
+
+    msg = EmailMessage()
+
+    msg["Subject"] = subject
+    msg["From"] = SENDER_EMAIL
+    msg["To"] = receiver_email
+
+    msg.set_content(body)
+
+    try:
+
+        with smtplib.SMTP_SSL(
+            "smtp.gmail.com",
+            465
+        ) as smtp:
+
+            smtp.login(
+                SENDER_EMAIL,
+                APP_PASSWORD
+            )
+
+            smtp.send_message(msg)
+
+        print(
+            f"Email sent to "
+            f"{receiver_email}"
+        )
+
+    except Exception as e:
+
+        print(
+            f"Failed to send email to "
+            f"{receiver_email}"
+        )
+
+        print(e)
+
+
+# CHECK REMINDERS
+
+
+def check_reminders(events):
+
+    found = False
+
+    for e in events:
+
+        remaining = days_left(e["date"])
+
+        # Send reminder 1 day before
+        if remaining == 1:
+
+            subject = (
+                f"Reminder: "
+                f"{e['name']} is tomorrow!"
+            )
+
+            body = f"""
+Hello,
+
+This is a reminder for your event.
+
+Event: {e['name']}
+Date: {e['date']}
+
+Your event is tomorrow.
+
+- Event Counter App
+"""
+
+            send_email(
+                e["email"],
+                subject,
+                body
+            )
+
+            found = True
+
+    if not found:
+        print(
+            "No reminders."
+        )
+
+
+# MAIN PROGRAM
+
+def main():
+
+    events = load_events()
+
+    while True:
+
+        print("\n===== EVENT COUNTER APP =====")
+
+        print("1. Add event")
+        print("2. View events")
+        print("3. Search event")
+        print("4. Send a custom email")
+        print("5. Send reminders")
+        print("6. Save & Exit")
+
+        choice = input(
+            "Choose an option: "
+        )
+
+        if choice == "1":
+
+            add_event(events)
+
+        elif choice == "2":
+
+            view_events(events)
+
+        elif choice == "3":
+
+            search_events(events)
+
+        elif choice == "4":
+            receiver_email = input("Enter recipient email: ")
+            subject = input("Enter email subject: ")
+            body = input("Enter email body: ")
+            send_email(receiver_email, subject, body)
+
+        elif choice == "5":
+
+            check_reminders(events)
+
+
+        elif choice == "6":
+
+            save_events(events)
+
+            print("bye bye bye ")
+
+            break
+
+        else:
+
+            print(
+                "Invalid choice. Try again."
+            )
+
+
+
+main()
